@@ -3,3 +3,12 @@
 __pycache__/
 *.pyc
 .DS_Store
+*.lnk
+git-installer.exe
+*.html
+!dashboard.html
+!interview_browser.html
+余荣华*.html
+余荣华*.docx
+简历*.html
+简历*.docx
