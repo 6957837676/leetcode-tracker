@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode 刷题进度监督 - P6测开</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --success: #059669;
+            --success-bg: #dcfce7;
+            --warning: #d97706;
+            --warning-bg: #fef3c7;
+            --danger: #dc2626;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-hover: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-main); color: var(--text-primary); min-height: 100vh; line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; margin-bottom: 20px; padding: 20px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); }
+        header h1 { font-size: 1.5rem; color: var(--primary); margin-bottom: 4px; }
+        header p { color: var(--text-secondary); font-size: 0.9rem; }
+        .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
+        .stat-item { flex: 1; background: var(--bg-card); border-radius: 8px; padding: 12px; text-align: center; border: 1px solid var(--border); }
+        .stat-item .value { font-size: 1.5rem; font-weight: 700; }
+        .stat-item .label { font-size: 0.75rem; color: var(--text-muted); }
+        .stat-item.completed .value { color: var(--success); }
+        .stat-item.remaining .value { color: var(--warning); }
+        .estimate-card { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 2px solid var(--primary-light); }
+        .estimate-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .estimate-header h3 { font-size: 1rem; color: var(--primary); }
+        .estimate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; }
+        .estimate-item { background: var(--bg-card); border-radius: 8px; padding: 12px; }
+        .estimate-item .num { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+        .estimate-item .text { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .today-section { background: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .today-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .today-header h3 { font-size: 1rem; color: var(--text-primary); }
+        .today-status { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+        .today-status.done { background: var(--success-bg); color: var(--success); }
+        .today-status.pending { background: var(--warning-bg); color: var(--warning); }
+        .recommend-list { display: flex; flex-direction: column; gap: 8px; }
+        .recommend-item { background: var(--bg-main); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); }
+        .recommend-item .num { width: 28px; height: 28px; background: var(--primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+        .recommend-item .info { flex: 1; min-width: 0; }
+        .recommend-item .name { font-weight: 600; font-size: 0.9rem; }
+        .recommend-item .meta { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .recommend-item .actions { display: flex; gap: 6px; }
+        .btn { padding: 6px 12px; border-radius: 6px; border: none; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-success { background: var(--success); color: #fff; }
+        .settings-bar { background: var(--bg-card); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .settings-bar label { font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+        .settings-bar input { width: 50px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; text-align: center; }
+        .settings-bar select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+        .filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .progress-bar { height: 8px; background: var(--border); border-radius: 4px; margin-bottom: 16px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 4px; transition: width 0.5s; }
+        .day-block { background: var(--bg-card); border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); overflow: hidden; }
+        .day-head { padding: 12px 16px; background: var(--bg-hover); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .day-head:hover { background: #e2e8f0; }
+        .day-head .left { display: flex; align-items: center; gap: 10px; }
+        .day-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+        .day-badge.phase1 { background: #fef3c7; color: #92400e; }
+        .day-badge.phase2 { background: #e2e8f0; color: #475569; }
+        .day-badge.phase3 { background: #fed7aa; color: #9a3412; }
+        .day-badge.review { background: #dbeafe; color: #1e40af; }
+        .day-head .right { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-secondary); }
+        .mini-progress { width: 80px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .mini-progress-fill { height: 100%; background: var(--success); }
+        .arrow { transition: transform 0.2s; font-size: 0.7rem; }
+        .day-head.open .arrow { transform: rotate(180deg); }
+        .day-body { display: none; padding: 12px; }
+        .day-body.show { display: block; }
+        .day-desc { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .problems-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+        .problem-card { background: var(--bg-main); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; }
+        .problem-card:hover { background: var(--bg-hover); }
+        .problem-card.is-pending { border-color: var(--warning); background: var(--warning-bg); }
+        .problem-card.is-done { opacity: 0.6; background: var(--success-bg); }
+        .problem-card.is-done .p-name { text-decoration: line-through; }
+        .p-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .problem-card.is-done .p-check { background: var(--success); border-color: var(--success); }
+        .p-check::after { content: '✓'; color: #fff; font-size: 0.7rem; font-weight: bold; opacity: 0; }
+        .problem-card.is-done .p-check::after { opacity: 1; }
+        .p-info { flex: 1; min-width: 0; }
+        .p-name { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-tags { display: flex; gap: 4px; margin-top: 3px; }
+        .tag { padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 500; }
+        .tag.easy { background: #dcfce7; color: #166534; }
+        .tag.medium { background: #fef3c7; color: #92400e; }
+        .tag.hard { background: #fee2e2; color: #991b1b; }
+        .tag.company { background: #e0e7ff; color: #3730a3; }
+        .tag.type { background: #f1f5f9; color: #475569; }
+        .p-link { padding: 4px 10px; background: var(--primary); color: #fff; border-radius: 5px; text-decoration: none; font-size: 0.75rem; font-weight: 500; }
+        .p-link:hover { background: var(--primary-light); }
+        .status-indicator { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 500; }
+        .status-indicator.done { background: var(--success-bg); color: var(--success); }
+        .status-indicator.pending { background: var(--warning-bg); color: var(--warning); }
+        .reset-btn { position: fixed; bottom: 16px; right: 16px; padding: 8px 16px; background: var(--danger); color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; cursor: pointer; z-index: 100; }
+        .toast { position: fixed; top: 16px; right: 16px; padding: 10px 16px; background: var(--success); color: #fff; border-radius: 6px; font-size: 0.85rem; transform: translateX(120%); transition: transform 0.3s; z-index: 1000; }
+        .toast.show { transform: translateX(0); }
+        @media (max-width: 768px) {
+            .stats-row { flex-wrap: wrap; }
+            .stat-item { min-width: calc(50% - 6px); }
+            .problems-grid { grid-template-columns: 1fr; }
+            .settings-bar { flex-direction: column; align-items: flex-start; }
+            .estimate-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 LeetCode 刷题进度监督</h1>
+            <p>阿里/字节/京东 P6 测开 · 27天计划 · 共 <strong id="total-num">72</strong> 题</p>
+        </header>
+
+        <div class="stats-row">
+            <div class="stat-item completed"><div class="value" id="done-num">0</div><div class="label">已完成 ✅</div></div>
+            <div class="stat-item remaining"><div class="value" id="pending-num">72</div><div class="label">待完成 📝</div></div>
+            <div class="stat-item"><div class="value" id="percent">0%</div><div class="label">完成率</div></div>
+            <div class="stat-item"><div class="value" id="streak">0</div><div class="label">连续天数 🔥</div></div>
+        </div>
+
+        <div class="estimate-card">
+            <div class="estimate-header">
+                <h3>⏱️ 完成时间预估</h3>
+                <span id="estimate-mode" style="font-size:0.8rem;color:var(--text-secondary)">27天计划</span>
+            </div>
+            <div class="estimate-grid">
+                <div class="estimate-item"><div class="num" id="est-days">27</div><div class="text">预计天数</div></div>
+                <div class="estimate-item"><div class="num" id="est-date">-</div><div class="text">预计完成日期</div></div>
+                <div class="estimate-item"><div class="num" id="est-daily">3</div><div class="text">今日目标</div></div>
+                <div class="estimate-item"><div class="num" id="est-remain">72</div><div class="text">剩余题目</div></div>
+            </div>
+        </div>
+
+        <div class="today-section" id="remind-section">
+            <div class="today-header">
+                <h3>🔔 微信提醒设置</h3>
+                <span class="today-status" id="remind-status">未设置</span>
+            </div>
+            <div style="padding: 12px 0;">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:0.85rem;color:var(--text-secondary);display:block;margin-bottom:6px;">Server酱 SendKey：</label>
+                    <input type="text" id="serverchan-key" placeholder="SCTxxxxxxxxxxxxxxxx" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;box-sizing:border-box;">
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">早间提醒：</label>
+                    <input type="time" id="morning-time" value="09:00" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;">
+                    <label style="font-size:0.85rem;color:var(--text-secondary);margin-left:10px;">晚间提醒：</label>
+                    <input type="time" id="evening-time" value="21:00" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;">
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="saveRemindSettings()">保存设置</button>
+                    <button class="btn" style="background:var(--warning);color:white;" onclick="sendRemindNow()">立即发送提醒</button>
+                    <button class="btn" style="background:var(--text-muted);color:white;" onclick="testRemind()">测试提醒</button>
+                </div>
+                <div id="remind-msg" style="margin-top:10px;font-size:0.8rem;color:var(--text-secondary);"></div>
+            </div>
+        </div>
+
+        <div class="today-section">
+            <div class="today-header">
+                <h3>🎯 今日推荐 (<span id="today-date"></span>)</h3>
+                <span class="today-status" id="today-status">进行中</span>
+            </div>
+            <div class="recommend-list" id="recommend-list"></div>
+        </div>
+
+        <div class="today-section" id="review-section" style="display:none;">
+            <div class="today-header">
+                <h3>📚 复习列表 (<span id="review-count">0</span>题已完成)</h3>
+                <span class="today-status done">点击题目复习</span>
+            </div>
+            <div class="recommend-list" id="review-list"></div>
+        </div>
+
+        <div class="filter-row">
+            <button class="filter-btn active" onclick="setFilter('all')">全部</button>
+            <button class="filter-btn" onclick="setFilter('pending')">🔴 待完成</button>
+            <button class="filter-btn" onclick="setFilter('done')">✅ 已完成</button>
+            <button class="filter-btn" onclick="setFilter('easy')">简单</button>
+            <button class="filter-btn" onclick="setFilter('medium')">中等</button>
+            <button class="filter-btn" onclick="setFilter('hard')">困难</button>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+        <div id="days"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">重置进度</button>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const DATA = {"days":[{"day":1,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":206,"name":"反转链表","slug":"reverse-linked-list","difficulty":"简单","type":"链表","priority":"超五星必刷"},{"id":3,"name":"无重复字符的最长子串","slug":"longest-substring-without-repeating-characters","difficulty":"中等","type":"滑动窗口","priority":"超五星必刷"},{"id":704,"name":"二分查找","slug":"binary-search","difficulty":"简单","type":"二分查找","priority":"超五星必刷"},{"id":215,"name":"数组中的第K个最大元素","slug":"kth-largest-element-in-an-array","difficulty":"中等","type":"堆/TOP K","priority":"超五星必刷"},{"id":146,"name":"LRU缓存","slug":"lru-cache","difficulty":"中等","type":"设计类","priority":"超五星必刷"}]},{"day":2,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":20,"name":"有效的括号","slug":"valid-parentheses","difficulty":"简单","type":"栈","priority":"超五星必刷"},{"id":15,"name":"三数之和","slug":"3sum","difficulty":"中等","type":"双指针","priority":"超五星必刷"},{"id":104,"name":"二叉树的最大深度","slug":"maximum-depth-of-binary-tree","difficulty":"简单","type":"二叉树","priority":"超五星必刷"},{"id":33,"name":"搜索旋转排序数组","slug":"search-in-rotated-sorted-array","difficulty":"中等","type":"二分查找","priority":"超五星必刷"},{"id":70,"name":"爬楼梯","slug":"climbing-stairs","difficulty":"简单","type":"动态规划","priority":"超五星必刷"}]},{"day":3,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":21,"name":"合并两个有序链表","slug":"merge-two-sorted-lists","difficulty":"简单","type":"链表","priority":"超五星必刷"},{"id":209,"name":"长度最小的子数组","slug":"minimum-size-subarray-sum","difficulty":"中等","type":"滑动窗口","priority":"超五星必刷"},{"id":101,"name":"对称二叉树","slug":"symmetric-tree","difficulty":"简单","type":"二叉树","priority":"超五星必刷"},{"id":34,"name":"在排序数组中查找元素的第一个和最后一个位置","slug":"find-first-and-last-position-of-element-in-sorted-array","difficulty":"中等","type":"二分查找","priority":"超五星必刷"},{"id":198,"name":"打家劫舍","slug":"house-robber","difficulty":"中等","type":"动态规划","priority":"五星核心"}]},{"day":4,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":283,"name":"移动零","slug":"move-zeroes","difficulty":"简单","type":"双指针","priority":"超五星必刷"},{"id":19,"name":"删除链表的倒数第N个结点","slug":"remove-nth-node-from-end-of-list","difficulty":"中等","type":"链表","priority":"超五星必刷"},{"id":102,"name":"二叉树的层序遍历","slug":"binary-tree-level-order-traversal","difficulty":"中等","type":"二叉树","priority":"超五星必刷"},{"id":347,"name":"前K个高频元素","slug":"top-k-frequent-elements","difficulty":"中等","type":"堆/TOP K","priority":"超五星必刷"},{"id":155,"name":"最小栈","slug":"min-stack","difficulty":"中等","type":"设计类","priority":"五星核心"}]},{"day":5,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":141,"name":"环形链表","slug":"linked-list-cycle","difficulty":"简单","type":"链表","priority":"超五星必刷"},{"id":56,"name":"合并区间","slug":"merge-intervals","difficulty":"中等","type":"双指针","priority":"五星核心"},{"id":226,"name":"翻转二叉树","slug":"invert-binary-tree","difficulty":"简单","type":"二叉树","priority":"超五星必刷"},{"id":46,"name":"全排列","slug":"permutations","difficulty":"中等","type":"回溯","priority":"五星核心"},{"id":322,"name":"零钱兑换","slug":"coin-change","difficulty":"中等","type":"动态规划","priority":"五星核心"}]},{"day":6,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":242,"name":"有效的字母异位词","slug":"valid-anagram","difficulty":"简单","type":"哈希","priority":"超五星必刷"},{"id":92,"name":"反转链表II","slug":"reverse-linked-list-ii","difficulty":"中等","type":"链表","priority":"五星核心"},{"id":236,"name":"二叉树的最近公共祖先","slug":"lowest-common-ancestor-of-a-binary-tree","difficulty":"中等","type":"二叉树","priority":"超五星必刷"},{"id":438,"name":"找到字符串中所有字母异位词","slug":"find-all-anagrams-in-a-string","difficulty":"中等","type":"滑动窗口","priority":"五星核心"},{"id":208,"name":"实现Trie(前缀树)","slug":"implement-trie-prefix-tree","difficulty":"中等","type":"设计类","priority":"五星核心"}]},{"day":7,"phase":"第一阶段：超高频核心冲刺期","desc":"【周复盘日】不刷新题，复盘本周25道核心题","isReview":true,"problems":[]},{"day":8,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":151,"name":"反转字符串中的单词","slug":"reverse-words-in-a-string","difficulty":"中等","type":"字符串","priority":"五星核心"},{"id":142,"name":"环形链表II","slug":"linked-list-cycle-ii","difficulty":"中等","type":"链表","priority":"五星核心"},{"id":199,"name":"二叉树的右视图","slug":"binary-tree-right-side-view","difficulty":"中等","type":"二叉树","priority":"五星核心"},{"id":153,"name":"寻找旋转排序数组中的最小值","slug":"find-minimum-in-rotated-sorted-array","difficulty":"中等","type":"二分查找","priority":"五星核心"},{"id":518,"name":"零钱兑换II","slug":"coin-change-2","difficulty":"中等","type":"动态规划","priority":"五星核心"}]},{"day":9,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":383,"name":"赎金信","slug":"ransom-note","difficulty":"简单","type":"哈希","priority":"超五星必刷"},{"id":148,"name":"排序链表","slug":"sort-list","difficulty":"中等","type":"链表","priority":"五星核心"},{"id":114,"name":"二叉树展开为链表","slug":"flatten-binary-tree-to-linked-list","difficulty":"中等","type":"二叉树","priority":"五星核心"},{"id":77,"name":"组合","slug":"combinations","difficulty":"中等","type":"回溯","priority":"五星核心"},{"id":300,"name":"最长递增子序列","slug":"longest-increasing-subsequence","difficulty":"中等","type":"动态规划","priority":"五星核心"}]},{"day":10,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":415,"name":"字符串相加","slug":"add-strings","difficulty":"简单","type":"字符串","priority":"五星核心"},{"id":23,"name":"合并K个升序链表","slug":"merge-k-sorted-lists","difficulty":"困难","type":"链表","priority":"五星核心"},{"id":105,"name":"从前序与中序遍历序列构造二叉树","slug":"construct-binary-tree-from-preorder-and-inorder-traversal","difficulty":"中等","type":"二叉树","priority":"五星核心"},{"id":78,"name":"子集","slug":"subsets","difficulty":"中等","type":"回溯","priority":"五星核心"},{"id":121,"name":"买卖股票的最佳时机","slug":"best-time-to-buy-and-sell-stock","difficulty":"简单","type":"动态规划","priority":"超五星必刷"}]},{"day":11,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":5,"name":"最长回文子串","slug":"longest-palindromic-substring","difficulty":"中等","type":"字符串","priority":"五星核心"},{"id":81,"name":"搜索旋转排序数组II","slug":"search-in-rotated-sorted-array-ii","difficulty":"中等","type":"二分查找","priority":"五星核心"},{"id":337,"name":"打家劫舍III","slug":"house-robber-iii","difficulty":"中等","type":"二叉树","priority":"五星核心"},{"id":39,"name":"组合总和","slug":"combination-sum","difficulty":"中等","type":"回溯","priority":"五星核心"},{"id":122,"name":"买卖股票的最佳时机II","slug":"best-time-to-buy-and-sell-stock-ii","difficulty":"中等","type":"动态规划","priority":"五星核心"}]},{"day":12,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":22,"name":"括号生成","slug":"generate-parentheses","difficulty":"中等","type":"回溯","priority":"五星核心"},{"id":287,"name":"寻找重复数","slug":"find-the-duplicate-number","difficulty":"中等","type":"二分查找","priority":"五星核心"},{"id":124,"name":"二叉树中的最大路径和","slug":"binary-tree-maximum-path-sum","difficulty":"困难","type":"二叉树","priority":"五星核心(P6定级)"},{"id":47,"name":"全排列II","slug":"permutations-ii","difficulty":"中等","type":"回溯","priority":"五星核心"},{"id":1143,"name":"最长公共子序列","slug":"longest-common-subsequence","difficulty":"中等","type":"动态规划","priority":"五星核心"}]},{"day":13,"phase":"第一阶段：超高频核心冲刺期","desc":"一面95%+考点，类型完全打散","problems":[{"id":32,"name":"最长有效括号","slug":"longest-valid-parentheses","difficulty":"困难","type":"栈","priority":"五星核心"},{"id":76,"name":"最小覆盖子串","slug":"minimum-window-substring","difficulty":"困难","type":"滑动窗口","priority":"超五星必刷"},{"id":239,"name":"滑动窗口最大值","slug":"sliding-window-maximum","difficulty":"困难","type":"单调队列","priority":"超五星必刷"},{"id":460,"name":"LFU缓存","slug":"lfu-cache","difficulty":"困难","type":"设计类","priority":"五星核心(P6定级)"},{"id":123,"name":"买卖股票的最佳时机III","slug":"best-time-to-buy-and-sell-stock-iii","difficulty":"困难","type":"动态规划","priority":"五星核心(P6定级)"}]},{"day":14,"phase":"第一阶段：超高频核心冲刺期","desc":"【双周复盘日】复盘前13天所有题目","isReview":true,"problems":[]},{"day":15,"phase":"第二阶段：P6定级进阶期","desc":"二面/三面70%+定级考点","problems":[{"id":"offer41","name":"数据流中的中位数","slug":"shu-ju-liu-zhong-de-zhong-wei-shu-lcof","difficulty":"困难","type":"堆/设计","priority":"五星核心(P6定级)"},{"id":40,"name":"组合总和II","slug":"combination-sum-ii","difficulty":"中等","type":"回溯","priority":"四星进阶"},{"id":90,"name":"子集II","slug":"subsets-ii","difficulty":"中等","type":"回溯","priority":"四星进阶"},{"id":18,"name":"四数之和","slug":"4sum","difficulty":"中等","type":"双指针","priority":"四星进阶"},{"id":516,"name":"最长回文子序列","slug":"longest-palindromic-subsequence","difficulty":"中等","type":"动态规划","priority":"四星进阶"}]},{"day":16,"phase":"第二阶段：P6定级进阶期","desc":"二面/三面70%+定级考点","problems":[{"id":341,"name":"扁平化嵌套列表迭代器","slug":"flatten-nested-list-iterator","difficulty":"中等","type":"设计类","priority":"五星核心"},{"id":131,"name":"分割回文串","slug":"palindrome-partitioning","difficulty":"中等","type":"回溯","priority":"四星进阶"},{"id":43,"name":"字符串相乘","slug":"multiply-strings","difficulty":"中等","type":"字符串","priority":"四星进阶"},{"id":188,"name":"买卖股票的最佳时机IV","slug":"best-time-to-buy-and-sell-stock-iv","difficulty":"困难","type":"动态规划","priority":"五星核心(P6定级)"},{"id":739,"name":"每日温度","slug":"daily-temperatures","difficulty":"中等","type":"单调栈","priority":"四星进阶"}]},{"day":17,"phase":"第二阶段：P6定级进阶期","desc":"二面/三面70%+定级考点","problems":[{"id":232,"name":"用栈实现队列","slug":"implement-queue-using-stacks","difficulty":"简单","type":"栈/队列","priority":"四星进阶"},{"id":526,"name":"优美的排列","slug":"beautiful-arrangement","difficulty":"中等","type":"动态规划","priority":"四星进阶"},{"id":416,"name":"分割等和子集","slug":"partition-equal-subset-sum","difficulty":"中等","type":"动态规划","priority":"五星核心"},{"id":55,"name":"跳跃游戏","slug":"jump-game","difficulty":"中等","type":"贪心","priority":"四星进阶"},{"id":312,"name":"戳气球","slug":"burst-balloons","difficulty":"困难","type":"动态规划","priority":"四星进阶(P6定级)"}]},{"day":18,"phase":"第二阶段：P6定级进阶期","desc":"二面/三面70%+定级考点","problems":[{"id":134,"name":"加油站","slug":"gas-station","difficulty":"中等","type":"贪心","priority":"四星进阶"},{"id":213,"name":"打家劫舍II","slug":"house-robber-ii","difficulty":"中等","type":"动态规划","priority":"五星核心"},{"id":72,"name":"编辑距离","slug":"edit-distance","difficulty":"困难","type":"动态规划","priority":"五星核心(P6定级)"},{"id":455,"name":"分发饼干","slug":"assign-cookies","difficulty":"简单","type":"贪心","priority":"四星进阶"},{"id":17,"name":"电话号码的字母组合","slug":"letter-combinations-of-a-phone-number","difficulty":"中等","type":"回溯","priority":"四星进阶"}]},{"day":19,"phase":"第二阶段：P6定级进阶期","desc":"【三周复盘日】复盘第二阶段进阶题","isReview":true,"problems":[]},{"day":20,"phase":"第二阶段：P6定级进阶期","desc":"【弱项专项突破】自定义选题","isReview":true,"problems":[]},{"day":21,"phase":"第二阶段：P6定级进阶期","desc":"【弱项专项突破】自定义选题","isReview":true,"problems":[]},{"day":22,"phase":"第二阶段：P6定级进阶期","desc":"【弱项专项突破】自定义选题","isReview":true,"problems":[]},{"day":23,"phase":"第二阶段：P6定级进阶期","desc":"【弱项专项突破】自定义选题","isReview":true,"problems":[]},{"day":24,"phase":"第二阶段：P6定级进阶期","desc":"【弱项专项突破】自定义选题","isReview":true,"problems":[]},{"day":25,"phase":"第三阶段：全真模拟冲刺期","desc":"一面模拟：45分钟4道题","isReview":true,"problems":[]},{"day":26,"phase":"第三阶段：全真模拟冲刺期","desc":"二面模拟：60分钟3道题","isReview":true,"problems":[]},{"day":27,"phase":"第三阶段：全真模拟冲刺期","desc":"终极复盘：全量题目","isReview":true,"problems":[]}]};
+
+        let progress = {};
+        let daily = {};
+        let recommended = {};
+        let filter = 'all';
+
+        function init() {
+            loadLocal();
+            render();
+        }
+
+        function loadLocal() {
+            try {
+                const p = localStorage.getItem('lc_progress');
+                if (p) progress = JSON.parse(p);
+                const d = localStorage.getItem('lc_daily');
+                if (d) daily = JSON.parse(d);
+                const r = localStorage.getItem('lc_recommended');
+                if (r) recommended = JSON.parse(r);
+            } catch(e) {}
+        }
+
+        function saveLocal() {
+            localStorage.setItem('lc_progress', JSON.stringify(progress));
+            localStorage.setItem('lc_daily', JSON.stringify(daily));
+            localStorage.setItem('lc_recommended', JSON.stringify(recommended));
+        }
+
+        function toast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 1500);
+        }
+
+        function key(p) { return `${p.id}_${p.name}`; }
+
+        function allProblems() {
+            const arr = [];
+            DATA.days.forEach(day => {
+                day.problems.forEach(p => arr.push({ ...p, day: day.day, phase: day.phase }));
+            });
+            return arr;
+        }
+
+        function pendingProblems() {
+            return allProblems().filter(p => !progress[key(p)]);
+        }
+
+        function toggle(k) {
+            const was = progress[k];
+            progress[k] = !was;
+            const today = new Date().toISOString().split('T')[0];
+            if (!was) {
+                if (!daily[today]) daily[today] = [];
+                daily[today].push(k);
+            } else if (daily[today]) {
+                const idx = daily[today].indexOf(k);
+                if (idx > -1) daily[today].splice(idx, 1);
+            }
+            saveLocal();
+            render();
+        }
+
+        function setFilter(f) {
+            filter = f;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(
+                    f === 'all' ? '全部' : f === 'pending' ? '待完成' : f === 'done' ? '已完成' : f === 'easy' ? '简单' : f === 'medium' ? '中等' : '困难'
+                ));
+            });
+            renderDays();
+        }
+
+        function render() {
+            renderStats();
+            renderEstimate();
+            renderRecommend();
+            renderReview();
+            renderDays();
+        }
+
+        function renderStats() {
+            const all = allProblems();
+            const done = all.filter(p => progress[key(p)]).length;
+            const total = all.length;
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            document.getElementById('total-num').textContent = total;
+            document.getElementById('done-num').textContent = done;
+            document.getElementById('pending-num').textContent = total - done;
+            document.getElementById('percent').textContent = pct + '%';
+            document.getElementById('progress-fill').style.width = pct + '%';
+            const dates = Object.keys(daily).sort();
+            let streak = 0;
+            const today = new Date();
+            for (let i = dates.length - 1; i >= 0; i--) {
+                const d = new Date(dates[i]);
+                const diff = Math.floor((today - d) / (1000 * 60 * 60 * 24));
+                if (diff === streak && daily[dates[i]].length > 0) streak++;
+                else if (diff > streak) break;
+            }
+            document.getElementById('streak').textContent = streak;
+        }
+
+        function renderEstimate() {
+            const all = allProblems();
+            const done = all.filter(p => progress[key(p)]).length;
+            const pending = all.length - done;
+            const today = new Date();
+            const finishDate = new Date(today);
+            finishDate.setDate(finishDate.getDate() + 27);
+            document.getElementById('est-days').textContent = 27;
+            document.getElementById('est-date').textContent = finishDate.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+            document.getElementById('est-daily').textContent = 3;
+            document.getElementById('est-remain').textContent = pending;
+        }
+
+        function renderRecommend() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const done = daily[todayStr] ? daily[todayStr].length : 0;
+            const goal = 3;
+            document.getElementById('today-date').textContent = today.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+            const statusEl = document.getElementById('today-status');
+            const container = document.getElementById('recommend-list');
+            const pending = pendingProblems();
+
+            const todayRecs = (recommended[todayStr] || []).filter(k => !progress[k]);
+            const hasPendingRecs = todayRecs.length > 0;
+
+            if (done >= goal && !hasPendingRecs) {
+                statusEl.textContent = `✓ 已达标 (${done}/${goal})`;
+                statusEl.className = 'today-status done';
+                if (pending.length > 0) {
+                    container.innerHTML = `<div style="text-align:center;padding:16px;color:var(--success);">🎉 今日目标已完成！</div><div style="text-align:center;padding:8px;"><button class="btn btn-primary" onclick="refreshRecommend()" style="padding:10px 24px;font-size:0.9rem;">🔄 重新推荐3题</button></div>`;
+                } else {
+                    container.innerHTML = `<div style="text-align:center;padding:16px;color:var(--success);">🎉 今日目标已完成！所有题目都完成了！</div>`;
+                }
+                return;
+            }
+
+            if (hasPendingRecs) {
+                statusEl.textContent = `进行中 (已刷${done}题，还有${todayRecs.length}题待刷)`;
+                statusEl.className = 'today-status pending';
+            } else {
+                statusEl.textContent = `进行中 (${done}/${goal})`;
+                statusEl.className = 'today-status pending';
+            }
+
+            let recs = [];
+            const remain = hasPendingRecs ? todayRecs.length : goal - done;
+
+            if (hasPendingRecs) {
+                todayRecs.forEach(k => {
+                    const p = allProblems().find(p => key(p) === k);
+                    if (p && !recs.find(r => key(r) === k)) recs.push(p);
+                });
+            } else {
+                const dates = Object.keys(recommended).sort().reverse();
+                for (const d of dates) {
+                    if (d >= todayStr) continue;
+                    recommended[d].forEach(k => {
+                        if (!progress[k] && recs.length < remain) {
+                            const p = allProblems().find(p => key(p) === k);
+                            if (p && !recs.find(r => key(r) === k)) recs.push(p);
+                        }
+                    });
+                }
+                
+                if (recs.length < remain) {
+                    pending.forEach(p => {
+                        if (!recs.find(r => key(r) === key(p)) && recs.length < remain) {
+                            recs.push(p);
+                        }
+                    });
+                }
+                
+                if (!recommended[todayStr]) {
+                    recommended[todayStr] = recs.map(p => key(p));
+                    saveLocal();
+                } else {
+                    const newKeys = recs.map(p => key(p)).filter(k => !recommended[todayStr].includes(k));
+                    if (newKeys.length > 0) {
+                        recommended[todayStr] = [...recommended[todayStr], ...newKeys];
+                        saveLocal();
+                    }
+                }
+            }
+            
+            if (recs.length === 0) { container.innerHTML = `<div style="text-align:center;padding:16px;">🎉 所有题目都完成了！</div>`; return; }
+            
+            container.innerHTML = recs.map((p, i) => {
+                const dc = p.difficulty === '简单' ? 'easy' : p.difficulty === '中等' ? 'medium' : 'hard';
+                const url = p.slug ? `https://leetcode.cn/problems/${p.slug}/` : `https://leetcode.cn/problems/${p.id}/`;
+                return `<div class="recommend-item"><div class="num">${i + 1}</div><div class="info"><div class="name">${p.id}. ${p.name}</div><div class="meta"><span class="tag ${dc}">${p.difficulty}</span><span class="tag type">${p.type}</span> · ${p.priority}</div></div><div class="actions"><a href="${url}" target="_blank" class="btn btn-primary">做题</a><button class="btn btn-success" onclick="toggle('${key(p)}')">完成 ✓</button></div></div>`;
+            }).join('');
+        }
+
+        function refreshRecommend() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const pending = pendingProblems();
+            const goal = 3;
+            const recs = pending.slice(0, goal);
+            if (recs.length === 0) { toast('没有待完成的题目了'); return; }
+            recommended[todayStr] = recs.map(p => key(p));
+            saveLocal();
+            render();
+            toast('已重新推荐3题！');
+        }
+
+        function renderReview() {
+            const all = allProblems();
+            const done = all.filter(p => progress[key(p)]);
+            const container = document.getElementById('review-list');
+            const section = document.getElementById('review-section');
+            
+            document.getElementById('review-count').textContent = done.length;
+            
+            if (done.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            container.innerHTML = done.slice(0, 5).map((p, i) => {
+                const dc = p.difficulty === '简单' ? 'easy' : p.difficulty === '中等' ? 'medium' : 'hard';
+                const url = p.slug ? `https://leetcode.cn/problems/${p.slug}/` : `https://leetcode.cn/problems/${p.id}/`;
+                return `<div class="recommend-item"><div class="num">${i + 1}</div><div class="info"><div class="name">${p.id}. ${p.name}</div><div class="meta"><span class="tag ${dc}">${p.difficulty}</span><span class="tag type">${p.type}</span></div></div><div class="actions"><a href="${url}" target="_blank" class="btn btn-primary">复习</a></div></div>`;
+            }).join('');
+            
+            if (done.length > 5) {
+                container.innerHTML += `<div style="text-align:center;padding:8px;color:var(--text-secondary);font-size:0.8rem;">还有 ${done.length - 5} 题已完成，可在上方筛选"已完成"查看</div>`;
+            }
+        }
+
+        function renderDays() {
+            const container = document.getElementById('days');
+            container.innerHTML = '';
+            DATA.days.forEach(day => {
+                let dDone = 0, dTotal = day.problems.length;
+                day.problems.forEach(p => { if (progress[key(p)]) dDone++; });
+                const dPct = dTotal > 0 ? Math.round((dDone / dTotal) * 100) : 0;
+                const phaseClass = day.phase.includes('第一') ? 'phase1' : day.phase.includes('第二') ? 'phase2' : 'phase3';
+                const block = document.createElement('div');
+                block.className = 'day-block';
+                if (day.isReview) {
+                    block.innerHTML = `<div class="day-head" onclick="toggleDay(this)"><div class="left"><span class="day-badge review">第${day.day}天</span><span style="font-weight:500">${day.desc}</span></div><div class="right"><span class="status-indicator pending">复盘日</span><span class="arrow">▼</span></div></div><div class="day-body"><div class="day-desc">${day.phase}</div><div style="text-align:center;padding:20px;color:var(--text-muted);">📝 本日为复盘日，不刷新题，请复习之前做过的题目</div></div>`;
+                } else {
+                    block.innerHTML = `<div class="day-head open" onclick="toggleDay(this)"><div class="left"><span class="day-badge ${phaseClass}">第${day.day}天</span><span style="font-weight:500">${day.desc}</span><span class="status-indicator ${dDone === dTotal ? 'done' : 'pending'}">${dDone === dTotal ? '✓ 完成' : `${dTotal - dDone}题待做`}</span></div><div class="right"><div class="mini-progress"><div class="mini-progress-fill" style="width:${dPct}%"></div></div><span>${dDone}/${dTotal}</span><span class="arrow">▼</span></div></div><div class="day-body show"><div class="day-desc">${day.phase}</div><div class="problems-grid">${day.problems.map(p => { const k = key(p); const isDone = progress[k]; const dc = p.difficulty === '简单' ? 'easy' : p.difficulty === '中等' ? 'medium' : 'hard'; let show = false; if (filter === 'all') show = true; else if (filter === 'pending' && !isDone) show = true; else if (filter === 'done' && isDone) show = true; else if (filter === 'easy' && p.difficulty === '简单') show = true; else if (filter === 'medium' && p.difficulty === '中等') show = true; else if (filter === 'hard' && p.difficulty === '困难') show = true; if (!show) return ''; const url = p.slug ? `https://leetcode.cn/problems/${p.slug}/` : `https://leetcode.cn/problems/${p.id}/`; const cardClass = isDone ? 'is-done' : 'is-pending'; const clickAction = isDone ? `window.open('${url}', '_blank')` : `toggle('${k}')`; const btnText = isDone ? '复习' : '做题'; return `<div class="problem-card ${cardClass}" onclick="${clickAction}"><div class="p-check"></div><div class="p-info"><div class="p-name">${p.id}. ${p.name}</div><div class="p-tags"><span class="tag ${dc}">${p.difficulty}</span><span class="tag type">${p.type}</span></div></div><a href="${url}" target="_blank" class="p-link" onclick="event.stopPropagation()">${btnText}</a></div>`; }).join('')}</div></div>`;
+                }
+                container.appendChild(block);
+            });
+        }
+
+        function toggleDay(el) {
+            const body = el.nextElementSibling;
+            const isOpen = body.classList.contains('show');
+            body.classList.toggle('show', !isOpen);
+            el.classList.toggle('open', !isOpen);
+        }
+
+        function resetAll() {
+            if (confirm('确定重置所有进度？')) {
+                progress = {};
+                daily = {};
+                saveLocal();
+                render();
+                toast('已重置');
+            }
+        }
+
+        let remindSettings = {};
+
+        function loadRemindSettings() {
+            try {
+                const s = localStorage.getItem('lc_remind');
+                if (s) remindSettings = JSON.parse(s);
+            } catch(e) {}
+            if (remindSettings.key) {
+                document.getElementById('serverchan-key').value = remindSettings.key;
+            }
+            if (remindSettings.morning) {
+                document.getElementById('morning-time').value = remindSettings.morning;
+            }
+            if (remindSettings.evening) {
+                document.getElementById('evening-time').value = remindSettings.evening;
+            }
+            updateRemindStatus();
+        }
+
+        function saveRemindSettings() {
+            remindSettings.key = document.getElementById('serverchan-key').value.trim();
+            remindSettings.morning = document.getElementById('morning-time').value;
+            remindSettings.evening = document.getElementById('evening-time').value;
+            localStorage.setItem('lc_remind', JSON.stringify(remindSettings));
+            updateRemindStatus();
+            toast('设置已保存');
+        }
+
+        function updateRemindStatus() {
+            const status = document.getElementById('remind-status');
+            if (remindSettings.key) {
+                status.textContent = '已配置';
+                status.className = 'today-status done';
+            } else {
+                status.textContent = '未设置';
+                status.className = 'today-status pending';
+            }
+        }
+
+        function showRemindMsg(msg, isError = false) {
+            const el = document.getElementById('remind-msg');
+            el.textContent = msg;
+            el.style.color = isError ? 'var(--danger)' : 'var(--success)';
+            setTimeout(() => el.textContent = '', 3000);
+        }
+
+        async function sendRemindNow() {
+            const key = remindSettings.key || document.getElementById('serverchan-key').value.trim();
+            if (!key) {
+                showRemindMsg('请先填写SendKey', true);
+                return;
+            }
+            showRemindMsg('发送中...');
+            try {
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                const done = daily[todayStr] ? daily[todayStr].length : 0;
+                const total = Object.keys(progress).length;
+                const goal = 3;
+                const remain = goal - done;
+                const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                const weekday = weekdayNames[today.getDay()];
+                
+                const todayRecs = (recommended[todayStr] || []).filter(k => !progress[k]);
+                const recProblems = [];
+                todayRecs.forEach(k => {
+                    const p = allProblems().find(p => key(p) === k);
+                    if (p) recProblems.push(p);
+                });
+                
+                let title, content;
+                if (done >= goal && recProblems.length === 0) {
+                    title = '🎉 今日刷题目标已完成！';
+                    content = `## 恭喜！今日目标已达成\n\n📅 ${today.toLocaleDateString('zh-CN')} ${weekday}\n\n✅ 今日完成: **${done}** 题\n\n📊 累计完成: **${total}** 题\n\n继续保持！💪`;
+                } else {
+                    if (recProblems.length > 0) {
+                        title = `📚 今日刷题提醒 (已刷${done}题，还有${recProblems.length}题待刷)`;
+                        const problemList = recProblems.map((p, i) => `${i + 1}. [${p.id}. ${p.name}](https://leetcode.cn/problems/${p.slug}/) (${p.difficulty} · ${p.type})`).join('\n');
+                        content = `## 刷题提醒\n\n📅 ${today.toLocaleDateString('zh-CN')} ${weekday}\n\n✅ 今日完成: **${done}** 题\n\n📊 累计完成: **${total}** 题\n\n---\n\n### 今日推荐题目\n\n${problemList}\n\n---\n\n[点击开始刷题](http://localhost:8080)\n\n加油！💪`;
+                    } else {
+                        title = `📚 今日刷题提醒 (已完成${done}/${goal}题)`;
+                        content = `## 刷题提醒\n\n📅 ${today.toLocaleDateString('zh-CN')} ${weekday}\n\n✅ 今日完成: **${done}** 题\n\n🎯 今日目标: **${goal}** 题\n\n⏳ 还需完成: **${remain}** 题\n\n📊 累计完成: **${total}** 题\n\n---\n\n[点击开始刷题](http://localhost:8080)\n\n加油！💪`;
+                    }
+                }
+                
+                const response = await fetch(`https://sctapi.ftqq.com/${key}.send`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `title=${encodeURIComponent(title)}&desp=${encodeURIComponent(content)}`
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    showRemindMsg('发送成功！请查看微信');
+                } else {
+                    showRemindMsg('发送失败: ' + result.message, true);
+                }
+            } catch (e) {
+                showRemindMsg('发送失败: ' + e.message, true);
+            }
+        }
+
+        async function testRemind() {
+            const key = remindSettings.key || document.getElementById('serverchan-key').value.trim();
+            if (!key) {
+                showRemindMsg('请先填写SendKey', true);
+                return;
+            }
+            showRemindMsg('发送测试消息...');
+            try {
+                const response = await fetch(`https://sctapi.ftqq.com/${key}.send`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'title=LeetCode刷题提醒测试&desp=这是一条测试消息，如果你收到说明配置成功！'
+                });
+                const result = await response.json();
+                if (result.code === 0) {
+                    showRemindMsg('测试消息发送成功！');
+                } else {
+                    showRemindMsg('发送失败: ' + result.message, true);
+                }
+            } catch (e) {
+                showRemindMsg('发送失败: ' + e.message, true);
+            }
+        }
+
+        init();
+        loadRemindSettings();
+    </script>
+</body>
+</html>

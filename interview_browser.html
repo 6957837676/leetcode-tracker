@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>软件测试面试题库</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: white; border-radius: 16px; padding: 24px 32px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header h1 { color: #1a1a2e; font-size: 28px; margin-bottom: 8px; }
+        .header p { color: #666; font-size: 14px; }
+        .stats-bar { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+        .stat-item { display: flex; align-items: center; gap: 8px; }
+        .stat-number { font-size: 24px; font-weight: 700; color: #667eea; }
+        .stat-label { color: #666; font-size: 13px; }
+        .progress-bar { width: 200px; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 4px; transition: width 0.3s ease; }
+        .controls { background: white; border-radius: 16px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+        .search-box { flex: 1; min-width: 200px; position: relative; }
+        .search-box input { width: 100%; padding: 12px 16px 12px 40px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; }
+        .search-box input:focus { outline: none; border-color: #667eea; }
+        .search-box::before { content: "🔍"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+        .filter-btn { padding: 10px 20px; border: 2px solid #e0e0e0; background: white; border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .filter-btn:hover { border-color: #667eea; color: #667eea; }
+        .filter-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
+        .main-content { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        @media (max-width: 900px) { .main-content { grid-template-columns: 1fr; } }
+        .sidebar { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); height: fit-content; position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; }
+        .sidebar h3 { color: #1a1a2e; font-size: 16px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #f0f0f0; }
+        .category-list { list-style: none; }
+        .category-item { padding: 10px 14px; margin: 2px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; font-size: 13px; }
+        .category-item:hover { background: #f5f5f5; }
+        .category-item.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .category-count { background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .category-item.active .category-count { background: rgba(255,255,255,0.3); }
+        .questions-grid { display: grid; gap: 16px; }
+        .question-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; }
+        .question-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .question-id { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .question-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+        .tag-high { background: #ffebee; color: #c62828; }
+        .tag-medium { background: #fff3e0; color: #e65100; }
+        .tag-category { background: #e3f2fd; color: #1565c0; }
+        .question-title { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-bottom: 12px; line-height: 1.5; }
+        .question-answer { color: #333; font-size: 14px; line-height: 1.8; padding: 16px; background: #e8f5e9; border-radius: 10px; border-left: 4px solid #4caf50; display: none; white-space: pre-wrap; }
+        .question-answer.show { display: block; }
+        .question-actions { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-outline { background: white; border: 2px solid #667eea; color: #667eea; }
+        .btn-outline:hover { background: #667eea; color: white; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-done { background: #e8f5e9; color: #2e7d32; }
+        .status-mastered { background: #e3f2fd; color: #1565c0; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 20px; padding: 32px; max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-close:hover { color: #333; }
+        .modal-title { font-size: 20px; font-weight: 600; color: #1a1a2e; margin-bottom: 20px; padding-right: 40px; }
+        .source-list { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 16px; }
+        .source-item { padding: 10px 14px; background: #f5f5f5; border-radius: 8px; font-size: 12px; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: #666; }
+        .difficulty-filter { display: flex; gap: 8px; }
+        .diff-btn { padding: 8px 16px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.3s; }
+        .diff-btn:hover { border-color: #667eea; }
+        .diff-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        select.btn { padding: 8px 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>软件测试面试题库</h1>
+            <p>题目来源：AI_Interview_Notes_updated + 面试题库准备（完整提取）</p>
+            <div class="stats-bar">
+                <div class="stat-item"><span class="stat-number" id="totalCount">0</span><span class="stat-label">题目总数</span></div>
+                <div class="stat-item"><span class="stat-number" id="doneCount">0</span><span class="stat-label">已掌握</span></div>
+                <div class="stat-item"><div class="progress-bar"><div class="progress-fill" id="progressBar" style="width: 0%"></div></div><span class="stat-label" id="progressText">0%</span></div>
+            </div>
+        </div>
+        <div class="controls">
+            <div class="search-box"><input type="text" id="searchInput" placeholder="搜索题目关键词..."></div>
+            <div class="difficulty-filter">
+                <button class="diff-btn active" data-diff="all">全部</button>
+                <button class="diff-btn" data-diff="high">高频</button>
+                <button class="diff-btn" data-diff="medium">中等</button>
+            </div>
+            <button class="filter-btn" id="showPending">待复习</button>
+            <button class="filter-btn" id="showDone">已掌握</button>
+        </div>
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>题目分类</h3>
+                <ul class="category-list" id="categoryList"></ul>
+                <h3 style="margin-top: 24px;">题目来源</h3>
+                <div class="source-list" id="sourceList"></div>
+            </div>
+            <div class="questions-grid" id="questionsGrid"></div>
+        </div>
+    </div>
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2 class="modal-title" id="modalTitle"></h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    <script>
+        const QUESTIONS_DATA = [
+            {id:1,category:"AI项目背景",title:"请介绍一下你的AI智能测试平台项目背景",content:"请说明项目的核心痛点和解决思路。",answer:"核心痛点：\n1. 自动化用例执行失败后，人工排查耗时（10-30分钟）\n2. 排查过程需要查日志、查数据库、拉代码，信息分散\n3. 排查结果依赖个人经验，新人上手慢\n\n解决思路：\n用AI Agent自动化完成整个排查流程，实现从失败到根因的端到端自动化。",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:2,category:"AI项目背景",title:"你的AI测试平台的技术栈是什么？",content:"请说明项目使用的技术栈。",answer:"后端框架：FastAPI\nAI/LLM：Claude 4.5 Sonnet\n知识库：TF-IDF（千级别规模）\n工具层：7种外部工具（日志查询、数据库查询、代码拉取等）\n执行环境：Git Worktree + Virtualenv",difficulty:"medium",source:"AI_Interview_Notes_updated"},
+            {id:3,category:"AI项目背景",title:"AI智能测试平台的效果如何？",content:"请说明项目的效果和收益。",answer:"排查时间：10-30分钟 → 1-2分钟（提升10倍）\n准确率：95%以上\n降低门槛：新人也能快速定位问题\n代码规模：RegressionAnalyzer（2,500+行）",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:4,category:"AI技术方案",title:"你的Agent如何精准定位代码问题？是简单的文本搜索吗？",content:"请说明智能代码提取流程和递归变量追踪的实现。",answer:"不是简单的文本搜索。我们实现了一个轻量级的静态分析器(Static Analyzer)，专门针对自动化测试脚本结构进行了优化。\n\n智能代码提取流程(SmartCodeExtractor)：\n1. 失败字段定位：从报错信息中提取failed_fields（如interest_rate）\n2. 三段式代码提取：\n   - Expect Value Setting：期望值是如何被定义的\n   - Actual Value Fetching：实际值是从哪里获取的\n   - Assertion：断言是在哪里失败的\n3. 递归变量追踪：当发现assert a == b失败时，递归向上寻找a和b的定义，防死循环机制：设置最大深度（5层）和已访问集合",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:5,category:"AI技术方案",title:"为什么选择三阶段而不是一次性分析？",content:"请说明三阶段设计的优势和思路。",answer:"一次性分析需要预先获取所有可能用到的信息，数据量大且很多是无用的，也容易超出Token限制。\n\n三阶段设计让AI根据初步诊断结果，动态决定需要哪些信息，更高效也更准确。\n\n这个思路就是ReAct框架——Thought → Action → Observation循环迭代。",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:6,category:"AI技术方案",title:"如何保证LLM输出的质量？",content:"请从多个层面说明质量控制方法。",answer:"四个层面：\n1. Prompt设计：明确格式、数量限制、禁止事项\n2. 逻辑验证：Phase 1诊断完检查逻辑自洽性\n3. LLM评委：Phase 3从5个维度评估质量\n4. 分级重试：低分重试，保留历史最佳",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:7,category:"AI技术方案",title:"为什么用TF-IDF而不是向量数据库？",content:"请说明技术选型的考量。",answer:"知识库规模在千级别，TF-IDF够用且5-10ms响应。\n\n错误信息中的关键词（错误码、服务名）更适合关键词匹配而非语义匹配。\n\n规模增长到万级以上时再迁移。",difficulty:"medium",source:"AI_Interview_Notes_updated"},
+            {id:8,category:"AI技术方案",title:"这个项目用到了哪些AI设计模式？",content:"请列举项目中应用的AI设计模式。",answer:"1. ReAct：回归排查Phase 2的迭代分析\n2. Reflexion：用例设计的质量迭代\n3. Tool Use / Function Calling：7种外部工具\n4. 两阶段检索（类RAG）：智能造数的粗排+精排\n5. Prompt Chaining：三阶段串联/6阶段Pipeline\n6. NL2SQL：用户激活的自然语言→SQL\n7. Self-Evaluation：LLM评委评估输出质量",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:9,category:"AI技术方案",title:"如何统一管理5个功能的路由？",content:"请说明ChatRouter的设计。",answer:"ChatRouter统一对话路由：LLM意图识别 + 参数提取 + 多轮状态缓存。\n\n新增功能只需：定义tool definition → 实现service → 注册到router，不需要改前端。",difficulty:"medium",source:"AI_Interview_Notes_updated"},
+            {id:10,category:"AI技术方案",title:"项目的可扩展性如何？",content:"请说明项目架构的可扩展性设计。",answer:"可扩展性设计：\n1. 新工具：Phase 2工具层是插件式设计\n2. 新功能模块：ChatRouter注册新tool definition即可\n3. 新外部系统：统一服务集成层支持快速接入\n\n未来优化方向：向量数据库迁移、MCP标准化工具层、自动修复、多模型路由、数据飞轮",difficulty:"medium",source:"AI_Interview_Notes_updated"},
+            {id:11,category:"AI实战案例",title:"如何解决多人同时使用不同分支进行测试的环境冲突？",content:"请说明Git Worktree的应用。",answer:"引入Git Worktree技术，结合Virtualenv实现完全的物理隔离。\n\n架构设计：\n/repos/automation_test/\n├── master/          # 主仓库\n├── worktree_req_123/ # 请求A的工作区\n└── worktree_req_456/ # 请求B的工作区\n\n核心实现：\n1. 智能分支匹配：从日志提取PFB，自动推断并匹配远程分支\n2. 并发锁控制：使用asyncio.Lock保护git fetch操作\n3. 秒级环境创建：创建Worktree复用主仓库Object，速度极快",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:12,category:"AI实战案例",title:"日志文件几百兆，Token有限，如何截取有效信息？",content:"请说明Smart Windowing智能窗口算法。",answer:"传统的tail -n 100或head -n 100效果极差，因为报错往往发生在中间。\n\n锚点定位算法：\n1. 扫描锚点：寻找Step Failed和result = ()两个关键特征\n2. 动态窗口计算：\n   - 核心失败发生在查询为空时，center = last_empty_result_idx\n   - 窗口策略：前100行（看操作过程），后50行（看堆栈信息）\n3. 效果：将5MB的日志压缩为5KB的精准上下文，LLM分析准确率提升40%",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:13,category:"AI实战案例",title:"遇到第三方库Bug或版本冲突，无法修改源码怎么办？",content:"请说明Monkey Patch的应用场景。",answer:"在用户激活功能中，protobuf库在特定环境下会抛出TypeError或AssertionError。\n\n采用Monkey Patch技术在运行时动态修复：\n- 在Python解释器加载模块之前，拦截并修改PbParser类的行为\n- 定义安全导入函数，捕获所有异常，忽略冲突的pb2文件\n- 零侵入：不需要修改自动化框架的源码\n- 即插即用：补丁代码只影响Agent触发的任务",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:14,category:"AI实战案例",title:"你的Prompt是怎么优化的？",content:"请说明从V1到V3的演进。",answer:"V1版本（Zero-shot）：\"分析这个错误日志：{log}\"\n结果：LLM经常幻觉，说\"可能是网络问题\"，全是废话。\n\nV2版本（Few-shot）：\"参考以下案例分析错误... [案例1] [案例2]\"\n结果：LLM过度拟合案例，把\"数据库为空\"强行解释为\"费用减免失败\"。\n\nV3版本（CoT + 逻辑引导）- 当前线上版本：\n- 重要提示：仔细阅读日志中result = ()前后100行的失败现场\n- 分析步骤：定位失败行、区分场景、结合代码分析断言中a和b的来源\n\n结果：准确率从60%提升至90%以上",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:15,category:"智能造数项目",title:"智能造数项目的背景是什么？解决了什么痛点？",content:"请说明项目背景和核心痛点。",answer:"核心痛点：\n1. 不同区域/产品的模板配置不同，人工查找匹配耗时\n2. SQL条件复杂，需要了解模板字段含义\n3. 激活后不确定是否真的满足条件，需要手动验证\n4. 新人不了解模板结构，完全无法独立操作\n\n效果：造数时间从20-30分钟降到2-3分钟（提升10倍）",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:16,category:"智能造数项目",title:"智能造数的两阶段检索为什么这样设计？",content:"请说明两阶段检索架构的设计思路。",answer:"直接让LLM处理数百个用例，Token成本高且准确率下降。\n\n两阶段架构：\n- 第一阶段：用关键词加权评分快速缩小范围（高召回）\n- 第二阶段：用LLM精排少量候选（高精度）\n\n类似工业级搜索的粗排→精排，也类似RAG的检索→重排序。",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:17,category:"智能造数项目",title:"智能造数项目的难点是什么？如何解决？",content:"请说明动态参数注入和Hook控制的解决方案。",answer:"难点：不同造数场景需要不同参数组合，且某些tag级hooks会影响数据状态。\n\n解决方案——动态feature生成：\n1. 运行时从Examples表格提取可编辑参数\n2. 用户修改参数后，动态生成临时feature文件\n3. HookScanner扫描所有tag级hooks，LLM分析每个hook的业务影响\n4. 用户可选择启用/禁用特定hooks",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:18,category:"用例设计项目",title:"用例设计项目的背景是什么？",content:"请说明项目背景和核心痛点。",answer:"核心痛点：\n1. 用例质量依赖个人经验，一致性差\n2. 容易遗漏边界场景和异常路径\n3. PRD来源多样（Confluence、PDF、图片），手工处理繁琐\n4. 缺乏质量评估标准，无法量化用例覆盖度\n\n效果：设计时间从2-4小时降到10-15分钟",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:19,category:"用例设计项目",title:"用例设计项目的难点是什么？",content:"请说明PRD解析和质量闭环的实现。",answer:"难点1：PRD来源格式多样\n解决方案：多来源PRD解析器\n- Confluence：REST API获取 → 降级为HTML爬取\n- PDF：文本提取\n- 图片：Vision API识别流程图、状态图\n\n难点2：LLM生成用例质量不一致\n解决方案：质量闭环（类Reflexion模式）\n- QualityScorer多维度评分\n- TestPointValidator检查覆盖度\n- 分数低于阈值时，LLM根据评分反馈自动改进\n\n难点3：XMind输出格式复杂\n解决方案：自行构造XMind文件（ZIP+JSON结构）",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:20,category:"用例设计项目",title:"用例设计的质量闭环怎么实现？",content:"请说明Reflexion模式的应用。",answer:"借鉴Reflexion模式：\nLLM生成 → QualityScorer评分 → TestPointValidator验证 → 低于阈值时LLM自动改进\n\n关键是把质量标准结构化（具体维度+分数），而不是让LLM自己判断。",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:21,category:"用户激活项目",title:"用户激活项目的背景是什么？",content:"请说明项目背景和核心痛点。",answer:"核心痛点：\n1. 不同区域/产品的模板配置不同，人工查找匹配耗时\n2. SQL条件复杂，需要了解模板字段含义\n3. 激活后不确定是否真的满足条件，需要手动验证\n4. 新人不了解模板结构，完全无法独立操作\n\n效果：激活时间从10-20分钟降到1-2分钟",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:22,category:"用户激活项目",title:"用户激活项目的难点是什么？",content:"请说明模板匹配和环境依赖的解决方案。",answer:"难点1：模板匹配准确性\n解决方案——LLM三级匹配策略：\n- 精确匹配：模板中存在完全满足条件的行\n- 调整匹配：基于最相似行修改不符合的字段\n- 降级匹配：LLM失败时选择权重最大的行\n\n难点2：自然语言理解复杂业务规则\n解决方案：约1000行Prompt工程，包含产品类型映射、期数合法性校验、区域特殊规则\n\n难点3：激活脚本环境依赖复杂\n解决方案：环境隔离\n- 创建独立venv执行激活脚本\n- Protobuf Monkey-patch处理pb2加载失败",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:23,category:"规则上传项目",title:"规则上传项目的背景是什么？",content:"请说明项目背景和核心痛点。",answer:"核心痛点：\n1. 多种规则类型（item/condition/quota）\n2. 多种条件ID（item_id/shop_id/category_id）\n3. 不同渠道CSV格式差异大\n4. 手动操作繁琐且容易出错\n\n效果：上传时间从15-30分钟降到2-3分钟（提升5-10倍）",difficulty:"medium",source:"AI_Interview_Notes_updated"},
+            {id:24,category:"可复用经验",title:"你在AI项目中有什么可复用的经验？",content:"请说明可复用的技术经验。",answer:"1. Agent + ReAct实战架构：多工具自主决策 + 迭代收集 + 质量闭环\n2. 两阶段检索架构：关键词预过滤（轻量高召回）+ LLM精排（智能高精度）\n3. 质量闭环模式：评分 → 验证 → 迭代优化，适用于任何LLM生成场景\n4. 代码级静态分析消除LLM幻觉：从源头获取事实数据\n5. NL → 结构化 → 自动执行 → 验证：端到端自动化的通用范式\n6. 统一Chat路由架构：意图识别 + 参数提取 + 多轮状态管理",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:25,category:"可复用经验",title:"智能造数项目的面试话术怎么说？",content:"请说明两阶段检索的面试话术。",answer:"\"这里的两阶段检索思路和工业级搜索系统一样——先用轻量方法缩小范围（关键词预过滤，高召回），再用LLM做精细排序（高精度），既控制了Token成本又保证了推荐精度。这和RAG中的检索→重排序是一脉相承的。\"",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:26,category:"可复用经验",title:"用例设计项目的面试话术怎么说？",content:"请说明质量闭环的面试话术。",answer:"\"借鉴了Reflexion模式，把质量标准结构化——具体到每个维度多少分——让LLM每次迭代都有明确的改进方向，而不是让它自己判断好不好。这样'生成→评估→改进'的闭环就有了可量化的驱动力。\"",difficulty:"high",source:"AI_Interview_Notes_updated"},
+            {id:27,category:"资损防控",title:"你是怎么做资损防控测试的？",content:"请从整体框架说明资损防控测试方法。",answer:"核心原则：零资损是底线，全链路防控是方法。\n\n具体做法：\n1. 事前风险拆解：画清楚资金流向，标注核心风险点，和产品开发对齐防护验收标准\n2. 核心场景全覆盖：梳理订单全生命周期状态矩阵，设计全链路用例\n3. 资损专项测试：金额准确性、幂等性防重、并发与事务、异常兜底\n4. 全链路对账兜底：前后端分层校验，上下游四方对账\n5. 自动化固化：高风险场景固化成自动化用例，每次迭代全量回归",difficulty:"high",source:"面试题库准备"},
+            {id:28,category:"资损防控",title:"你怎么做退款场景的资损防控测试？",content:"请说明退款场景的专项测试方法。",answer:"围绕「不重复退款、不超额退款、全链路数据一致、异常可兜底」的核心目标：\n\n1. 事前风险拆解：画退款全链路资金流向，标注核心风险点\n2. 核心场景全覆盖：订单全生命周期状态矩阵，覆盖正常退款、部分退款、多入口交叉退款\n3. 资损核心专项测试：\n   - 金额准确性：六层金额校验机制\n   - 幂等性防重：模拟重复提交、重试、重复回调\n   - 并发与事务：模拟多入口并发退款\n   - 异常兜底：模拟服务宕机、网络中断\n4. 全链路对账兜底：前后端分层校验，上下游四系统对账",difficulty:"high",source:"面试题库准备"},
+            {id:29,category:"资损防控",title:"你怎么测试接口的幂等性？常见的幂等性方案怎么验证？",content:"请列举幂等性实现方案及测试方法。",answer:"幂等性：同一个请求，不管执行多少次，最终结果都和执行一次完全一致。\n\n常见方案及测试方法：\n1. 唯一索引防重：用同一个refund_id重复发起请求，验证第二次是否被拦截\n2. 前置互斥锁（悲观锁）：用并发工具同时发起多笔退款，验证互斥锁有效性\n3. 终态检查机制：先发起退款成功后，再用同一请求重复提交，验证是否直接返回已有结果\n4. CAS乐观锁：模拟并发更新同一条订单记录，验证是否出现脏写\n5. Token令牌机制：用同一个Token重复发起请求，验证第二次是否被拦截\n\n端到端验证：网络超时自动重试、前端重复点击、MQ消息重复消费、网关重试",difficulty:"high",source:"面试题库准备"},
+            {id:30,category:"资损防控",title:"针对并发场景下的资损风险，你是怎么做测试的？",content:"请说明并发测试的方法和步骤。",answer:"并发场景是资损的重灾区，测试方法：\n\n1. 提前识别并发风险点：找出所有会并发操作同一条数据、同一个账户、同一个订单的场景\n2. 设计精准的并发测试场景：\n   - 同一订单用户端和客服平台同时发起退款\n   - 同一订单同时发起退款和确认收货\n   - 同一用户账户同时发起两笔还款\n   - 同一笔退款同时收到多笔渠道回调通知\n3. 用工具实现精准并发测试：JMeter、Python多线程/协程，用CyclicBarrier让多个请求在同一时刻发起\n4. 全链路兜底校验：订单状态、账户余额、全链路数据一致性\n5. 异常场景的并发验证：注入服务宕机、数据库中断等故障",difficulty:"high",source:"面试题库准备"},
+            {id:31,category:"资损防控",title:"如果线上出现了资损事故，你第一时间会做什么？",content:"请说明资损事故的处理流程。",answer:"处理原则：先止损，再定位，然后复盘优化。\n\n具体步骤：\n1. 第一时间止损：关闭相关功能入口、切走流量、禁用相关接口；配合风控拦截异常资金操作\n2. 快速定位问题：拉取日志、全链路追踪信息、数据库记录，核对资损金额、影响用户数、涉及订单\n3. 推动修复与恢复：配合开发制定修复方案，测试验证，上线热修复\n4. 全额复盘：搞清楚根因，为什么线下测试没测出来，制定优化措施\n5. 长效优化：补充到资损专项测试核心用例，固化成自动化用例",difficulty:"high",source:"面试题库准备"},
+            {id:32,category:"资损防控",title:"你有没有遇到过差点造成资损的风险？当时是怎么处理的？",content:"请举例说明风险发现和处理过程。",answer:"案例：并发退款专项测试中发现超额退款问题\n\n场景：模拟用户端和客服平台在同一时刻给同一笔订单发起两笔不同金额的退款，结果两笔退款都成功，累计退款金额超过订单本金\n\n处理过程：\n1. 稳定复现问题，记录完整复现步骤\n2. 立刻同步给开发负责人、产品负责人，要求暂停提测\n3. 配合开发定位根因：可退金额计算和退款记录插入没有放在同一原子事务里\n4. 推动开发优化：加CAS乐观锁，放在同一数据库事务里\n5. 全面回归测试，补充边界场景\n6. 固化成自动化用例，同步到团队风险库",difficulty:"high",source:"面试题库准备"},
+            {id:33,category:"资损防控",title:"怎么用自动化测试来做资损防控？",content:"请说明自动化测试在资损防控中的应用。",answer:"自动化测试是资损防控长效机制的核心：\n\n1. 核心资损场景100%自动化覆盖：幂等性校验、金额准确性、并发控制、异常回滚、状态一致性\n2. 自动化用例分层设计：\n   - 接口层：覆盖核心资金逻辑校验，每次代码提交自动跑，10分钟出结果\n   - 端到端层：覆盖全链路业务场景，每天晚上定时跑全量回归\n3. 自动化全链路对账校验：每个用例执行完成后，自动查询上下游系统核对数据\n4. 和CI/CD流程深度集成：核心资损场景用例失败直接阻断构建\n5. 持续迭代优化：每次线上问题补充到自动化用例库",difficulty:"high",source:"面试题库准备"},
+            {id:34,category:"资损防控",title:"怎么把大模型/AI能力用到资损防控里？",content:"请说明AI在资损防控中的应用方向。",answer:"AI智能测试平台应用：\n\n1. AI智能用例设计：\n   - 把历史线上资损案例、优质用例、需求文档做成知识库\n   - 用RAG方式喂给大模型，自动拆解资损风险点\n   - 用例场景覆盖率比纯人工设计提升40%\n\n2. AI自动化根因排查：\n   - Agent+ReAct架构\n   - 自动调用全链路追踪工具、查日志、查数据库、拉代码\n   - 1-2分钟出精准根因分析，准确率95%以上\n\n3. AI智能覆盖率校验：实时拉取增量代码，分析哪些高风险分支没覆盖到\n\n4. AI智能造数：用大白话生成符合场景的测试数据，1-2分钟完成",difficulty:"high",source:"面试题库准备"},
+            {id:35,category:"资损防控",title:"在资损防控里，测试的角色和定位是什么？",content:"请说明测试在资损防控中的定位。",answer:"测试不是单纯的\"找bug的人\"，而是：\n\n1. 资损风险的前置防控者：\n   - 在需求、技术方案阶段就深度介入\n   - 提前识别资损风险点\n   - 推动开发提前做好防护方案\n\n2. 资金安全的最终守门人：\n   - 版本上线前的最后一道关口\n   - 抱着零容错的敬畏心\n   - 确保每一层防护都有效\n\n3. 资损防控体系的建设者：\n   - 沉淀经验、方法论、用例\n   - 形成团队标准规范、自动化体系、风险库\n   - 推动整个团队的资损防控能力提升",difficulty:"high",source:"面试题库准备"},
+            {id:36,category:"Python基础",title:"堆和栈的区别是什么？",content:"请说明堆和栈数据结构的特点。",answer:"堆(Heap)：是一种先进先出(FIFO)的数据结构\n\n栈(Stack)：是一种先进后出(LIFO)的数据结构",difficulty:"medium",source:"面试题库准备"},
+            {id:37,category:"Python基础",title:"list和set的区别是什么？",content:"请比较list、set、tuple、dict的特点。",answer:"list：列表，有序的，元素可重复，数据可变\n\nset：集合，无序的，元素不可重复，数据可变\n\ntuple：元组，不可改变的list，数据不可变\n\ndict：字典，有Key-Value对，set是没有Value的dict\n\nlist是列表，有序的，元素可重复的。\nset是集合，无序的，元素不可重复的。",difficulty:"medium",source:"面试题库准备"},
+            {id:38,category:"Python基础",title:"sort和sorted的区别是什么？",content:"请比较两种排序方法的特点。",answer:"1. sort()函数只适用于列表排序，而sorted()函数适用于任意可以迭代的对象排序。\n\n2. L.sort()函数排序会改变原有的待排序列表，而sorted()函数则不会改变。所以在使用列表进行排序时，需要考虑是否需要保存原列表，如果无需保存原列表，则优先使用L.sort()节省内存空间，提高效率。\n\n3. 两个函数通过定义key和cmp都可以完成排序，但是key的效率要远远高于cmp，所以要优先使用key。",difficulty:"medium",source:"面试题库准备"},
+            {id:39,category:"反问环节",title:"如果我做这个岗位，您觉得我会遇到什么挑战？",content:"反问面试官的问题。",answer:"这是一个展示你对岗位思考深度的好问题，同时也能帮助你了解岗位的真实情况。",difficulty:"medium",source:"面试题库准备"},
+            {id:40,category:"反问环节",title:"为了完成这个岗位的核心目标，公司或者部门会给到那些资源和支持？",content:"反问面试官的问题。",answer:"这个问题展示了你对目标达成的关注，同时也能了解公司的资源投入情况。",difficulty:"medium",source:"面试题库准备"},
+            {id:41,category:"反问环节",title:"如果这次我没通过，您觉得我还有哪些地方不够？",content:"反问面试官的问题。",answer:"这是一个展示你愿意接受反馈、持续改进的问题，即使没通过也能获得有价值的建议。",difficulty:"medium",source:"面试题库准备"},
+            {id:42,category:"离职原因",title:"你为什么想换工作？",content:"请说明离职原因和职业规划。",answer:"核心原因还是职业规划的考量。我在虾皮做消费贷测试这几年，把整个业务从准入、放款、退款到还款的全链路都摸透了，核心的架构改造、多地区上线项目也都主导做完了，现在日常的工作我都能完全hold住，说实话确实进入了一个比较舒适的状态。\n\n但我自己不想一直停在原地，我的长期目标是深入互联网金融这个领域的测试做深做透，所以希望能到一个更大的平台，接触更复杂、更深入的业务场景。一方面我之前沉淀的消费贷资损防控、自动化体系搭建、测试工具开发的经验，能直接用到工作里，给公司带来价值；另一方面我也能跳出原来的舒适圈，学到更多新的东西，让自己的职业发展能往上再走一步。",difficulty:"high",source:"面试题库准备"},
+            {id:43,category:"离职原因",title:"你为什么想换工作？（跨行业版本）",content:"请说明跨行业离职原因和职业规划。",answer:"核心原因还是我自己的职业规划考量。我在虾皮做了几年消费贷的测试，这个赛道对质量的要求极高，容不得半点资损和故障，这几年下来，我把高风险业务的全流程质量管控、自动化体系搭建、跨团队项目推动这些核心能力都打磨得很扎实了，日常的工作完全能hold住，说实话确实进入了一个比较舒适的状态。\n\n但我不想一直困在消费贷这一个垂直赛道里，我的长期目标是把质量保障这件事做深做透，而不是只懂某一个行业的业务。所以希望能换一个新的行业赛道，一方面，我之前在高风险业务里沉淀的零故障保障、测试提效、风险防控的经验，是所有行业都通用的，我能快速上手工作，给团队带来实实在在的价值；另一方面，我也能跳出原来的舒适圈，接触新的业务场景，拓展自己的能力边界，让自己的职业发展能往上再走一步。",difficulty:"high",source:"面试题库准备"},
+            {id:44,category:"团队管理",title:"你有带团队的经验吗？",content:"请说明团队管理经验。",answer:"我目前没有正式带编制内团队的管理经验，没有负责过下属的招聘、绩效评定、团队编制规划这类全职管理工作。但在过往的核心项目里，我有非常多的团队协同、跨团队牵头落地、新人带教的实战积累：\n\n比如之前的双UID解耦改造项目，我牵头拉通了5个部门12个开发负责人，制定统一规范、拆解任务、同步进度、推动落地，最终项目零资损按计划上线；同时我也带过2名新入职的测试同事，帮他们快速熟悉消费贷业务、搭建自动化用例体系，沉淀的测试规范、工具也一直被团队复用。\n\n我的职业规划是先把金融测试的技术深度打扎实，再逐步往技术管理方向发展，目前也在主动积累项目牵头、团队体系建设的相关经验，为后续的发展做准备。",difficulty:"medium",source:"面试题库准备"}
+        ];
+        const SOURCES = ["AI_Interview_Notes_updated", "面试题库准备"];
+        const CATEGORIES = [...new Set(QUESTIONS_DATA.map(q => q.category))];
+        let currentCategory = 'all', currentDifficulty = 'all', currentStatus = 'all', searchKeyword = '';
+        let progress = JSON.parse(localStorage.getItem('interviewProgress') || '{}');
+        function init() { renderCategories(); renderSources(); renderQuestions(); updateStats(); bindEvents(); }
+        function renderCategories() {
+            const list = document.getElementById('categoryList');
+            let html = '<li class="category-item active" data-category="all"><span>全部题目</span><span class="category-count">' + QUESTIONS_DATA.length + '</span></li>';
+            CATEGORIES.forEach(cat => { const count = QUESTIONS_DATA.filter(q => q.category === cat).length; html += '<li class="category-item" data-category="' + cat + '"><span>' + cat + '</span><span class="category-count">' + count + '</span></li>'; });
+            list.innerHTML = html;
+        }
+        function renderSources() { document.getElementById('sourceList').innerHTML = SOURCES.map(s => '<div class="source-item">📄 ' + s + '</div>').join(''); }
+        function renderQuestions() {
+            const grid = document.getElementById('questionsGrid');
+            let filtered = QUESTIONS_DATA;
+            if (currentCategory !== 'all') filtered = filtered.filter(q => q.category === currentCategory);
+            if (currentDifficulty !== 'all') filtered = filtered.filter(q => q.difficulty === currentDifficulty);
+            if (currentStatus !== 'all') filtered = filtered.filter(q => (progress[q.id] || 'pending') === currentStatus);
+            if (searchKeyword) filtered = filtered.filter(q => q.title.toLowerCase().includes(searchKeyword.toLowerCase()) || q.content.toLowerCase().includes(searchKeyword.toLowerCase()));
+            if (filtered.length === 0) { grid.innerHTML = '<div class="empty-state"><h3>暂无匹配的题目</h3><p>尝试调整筛选条件</p></div>'; return; }
+            grid.innerHTML = filtered.map(q => renderQuestionCard(q)).join('');
+        }
+        function renderQuestionCard(q) {
+            const status = progress[q.id] || 'pending';
+            const statusText = status === 'done' ? '已掌握' : status === 'mastered' ? '精通' : '待复习';
+            const statusClass = status === 'done' ? 'status-done' : status === 'mastered' ? 'status-mastered' : 'status-pending';
+            return '<div class="question-card"><div class="question-header"><span class="question-id">#' + q.id + '</span><div class="question-tags"><span class="tag tag-category">' + q.category + '</span><span class="tag tag-' + q.difficulty + '">' + (q.difficulty === 'high' ? '高频' : '中等') + '</span></div></div><h3 class="question-title">' + q.title + '</h3><div class="question-answer" id="answer-' + q.id + '">' + q.answer + '</div><div class="question-actions"><button class="btn btn-primary" onclick="toggleAnswer(' + q.id + ')">查看答案</button><button class="btn btn-outline" onclick="openModal(' + q.id + ')">详细查看</button><span class="status-badge ' + statusClass + '">' + statusText + '</span><select class="btn" style="padding:8px 12px;" onchange="updateStatus(' + q.id + ', this.value)"><option value="pending" ' + (status === 'pending' ? 'selected' : '') + '>待复习</option><option value="done" ' + (status === 'done' ? 'selected' : '') + '>已掌握</option><option value="mastered" ' + (status === 'mastered' ? 'selected' : '') + '>精通</option></select></div></div>';
+        }
+        function toggleAnswer(id) { document.getElementById('answer-' + id).classList.toggle('show'); }
+        function openModal(id) {
+            const q = QUESTIONS_DATA.find(item => item.id === id);
+            if (!q) return;
+            document.getElementById('modalTitle').textContent = q.title;
+            document.getElementById('modalBody').innerHTML = '<div style="margin-bottom:16px;"><span class="tag tag-category">' + q.category + '</span> <span class="tag tag-' + q.difficulty + '">' + (q.difficulty === 'high' ? '高频' : '中等') + '</span> <span class="tag" style="background:#f5f5f5;color:#666;">来源: ' + q.source + '</span></div><div style="margin-bottom:20px;"><h4 style="margin-bottom:8px;color:#333;">问题描述</h4><p style="color:#666;line-height:1.8;">' + q.content + '</p></div><div><h4 style="margin-bottom:8px;color:#333;">参考答案</h4><div style="background:#f8f9fa;padding:16px;border-radius:8px;line-height:1.8;white-space:pre-wrap;">' + q.answer + '</div></div>';
+            document.getElementById('questionModal').classList.add('show');
+        }
+        function closeModal() { document.getElementById('questionModal').classList.remove('show'); }
+        function updateStatus(id, status) { progress[id] = status; localStorage.setItem('interviewProgress', JSON.stringify(progress)); updateStats(); renderQuestions(); }
+        function updateStats() { const total = QUESTIONS_DATA.length; const done = Object.values(progress).filter(s => s === 'done' || s === 'mastered').length; const percent = Math.round(done / total * 100); document.getElementById('totalCount').textContent = total; document.getElementById('doneCount').textContent = done; document.getElementById('progressBar').style.width = percent + '%'; document.getElementById('progressText').textContent = percent + '%'; }
+        function bindEvents() {
+            document.querySelectorAll('.category-item').forEach(item => { item.addEventListener('click', function() { document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active')); this.classList.add('active'); currentCategory = this.dataset.category; renderQuestions(); }); });
+            document.querySelectorAll('.diff-btn').forEach(btn => { btn.addEventListener('click', function() { document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); currentDifficulty = this.dataset.diff; renderQuestions(); }); });
+            document.getElementById('searchInput').addEventListener('input', function() { searchKeyword = this.value; renderQuestions(); });
+            document.getElementById('showPending').addEventListener('click', function() { currentStatus = currentStatus === 'pending' ? 'all' : 'pending'; this.classList.toggle('active'); document.getElementById('showDone').classList.remove('active'); renderQuestions(); });
+            document.getElementById('showDone').addEventListener('click', function() { currentStatus = currentStatus === 'done' ? 'all' : 'done'; this.classList.toggle('active'); document.getElementById('showPending').classList.remove('active'); renderQuestions(); });
+            document.getElementById('questionModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        }
+        init();
+    </script>
+</body>
+</html>
