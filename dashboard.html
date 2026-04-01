@@ -232,6 +232,18 @@
             localStorage.setItem('lc_progress', JSON.stringify(progress));
             localStorage.setItem('lc_daily', JSON.stringify(daily));
             localStorage.setItem('lc_recommended', JSON.stringify(recommended));
+            
+            try {
+                fetch('/api/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        progress: progress,
+                        daily: daily,
+                        recommended: recommended
+                    })
+                });
+            } catch(e) {}
         }
 
         function toast(msg) {
@@ -600,6 +612,149 @@
             } catch (e) {
                 showRemindMsg('发送失败: ' + e.message, true);
             }
+        }
+
+        // 纯前端定时提醒功能
+        let remindTimer = null;
+
+        function startAutoRemind() {
+            stopAutoRemind();
+            
+            if (!remindSettings.key) {
+                console.log('未设置SendKey，定时提醒未启动');
+                return;
+            }
+            
+            // 修复时间格式：确保是HH:MM格式
+            let morningTime = remindSettings.morning || '09:00';
+            let eveningTime = remindSettings.evening || '21:00';
+            
+            // 自动修复时间格式（如果用户输入8.45，转换为08:45）
+            morningTime = fixTimeFormat(morningTime);
+            eveningTime = fixTimeFormat(eveningTime);
+            
+            console.log(`启动定时提醒：早上${morningTime}，晚上${eveningTime}`);
+            console.log('当前时间：', new Date().toLocaleTimeString('zh-CN'));
+            
+            // 设置定时器，每分钟检查一次
+            remindTimer = setInterval(() => {
+                const now = new Date();
+                const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                
+                console.log(`检查时间：${currentTime}，目标时间：早上${morningTime}，晚上${eveningTime}`);
+                
+                if (currentTime === morningTime) {
+                    console.log('触发早上提醒');
+                    sendMorningRemind();
+                } else if (currentTime === eveningTime) {
+                    console.log('触发晚上提醒');
+                    sendEveningRemind();
+                }
+            }, 60000); // 每分钟检查一次
+        }
+
+        // 修复时间格式函数
+        function fixTimeFormat(timeStr) {
+            if (!timeStr) return '09:00';
+            
+            // 如果包含点号，转换为冒号
+            if (timeStr.includes('.')) {
+                timeStr = timeStr.replace('.', ':');
+            }
+            
+            // 确保是HH:MM格式
+            const parts = timeStr.split(':');
+            if (parts.length === 2) {
+                const hours = parts[0].padStart(2, '0');
+                const minutes = parts[1].padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+            
+            return '09:00'; // 默认值
+        }
+
+        function stopAutoRemind() {
+            if (remindTimer) {
+                clearInterval(remindTimer);
+                remindTimer = null;
+            }
+        }
+
+        async function sendMorningRemind() {
+            if (!remindSettings.key) return;
+            
+            const today = new Date();
+            const title = '🌅 早安！今日刷题任务待完成';
+            const content = `## 早安提醒\n\n📅 ${today.toLocaleDateString('zh-CN')}\n\n🎯 今日目标: **3** 题\n\n⏰ 别忘了今天的刷题任务哦！\n\n[点击开始刷题](http://localhost:8080)`;
+            
+            try {
+                await fetch(`https://sctapi.ftqq.com/${remindSettings.key}.send`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `title=${encodeURIComponent(title)}&desp=${encodeURIComponent(content)}`
+                });
+                console.log('早上提醒已发送');
+            } catch (e) {
+                console.error('早上提醒发送失败:', e);
+            }
+        }
+
+        async function sendEveningRemind() {
+            if (!remindSettings.key) return;
+            
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const done = daily[todayStr] ? daily[todayStr].length : 0;
+            
+            if (done < 3) {
+                const title = '🌙 晚间提醒：今日刷题未完成';
+                const content = `## 晚间提醒\n\n📅 ${today.toLocaleDateString('zh-CN')}\n\n✅ 今日完成: **${done}** 题\n\n🎯 今日目标: **3** 题\n\n⏳ 还差: **${3 - done}** 题\n\n睡前再来刷几题吧！💪\n\n[点击继续刷题](http://localhost:8080)`;
+                
+                try {
+                    await fetch(`https://sctapi.ftqq.com/${remindSettings.key}.send`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: `title=${encodeURIComponent(title)}&desp=${encodeURIComponent(content)}`
+                    });
+                    console.log('晚上提醒已发送');
+                } catch (e) {
+                    console.error('晚上提醒发送失败:', e);
+                }
+            }
+        }
+
+        // 立即测试提醒功能
+        function testRemindNow() {
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            console.log(`手动测试：当前时间 ${currentTime}`);
+            
+            // 测试早上提醒
+            sendMorningRemind();
+            
+            // 测试晚上提醒
+            setTimeout(() => {
+                sendEveningRemind();
+            }, 2000);
+        }
+
+        // 页面加载时启动定时提醒
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                startAutoRemind();
+            }, 1000);
+        });
+
+        // 保存设置时重启定时提醒
+        function saveRemindSettings() {
+            remindSettings.key = document.getElementById('serverchan-key').value.trim();
+            remindSettings.morning = document.getElementById('morning-time').value;
+            remindSettings.evening = document.getElementById('evening-time').value;
+            localStorage.setItem('lc_remind', JSON.stringify(remindSettings));
+            updateRemindStatus();
+            startAutoRemind(); // 重启定时提醒
+            toast('设置已保存');
         }
 
         init();
